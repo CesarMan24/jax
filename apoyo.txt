@@ -1,0 +1,19 @@
+def analizadorgeneral(contents):
+    cadena = ""
+    fila = 0
+    columnainicial = 0
+    for caracter in contents:
+   #analize_again = True
+  # while(analize_again):
+       #analizadorreservada() = analize_again
+
+  if fila == 0: 
+            cadena = ""
+            fila = 0
+            columnainicial = 0
+
+     if fila == 99:
+            print("<NUMBER," +cadena+ ">") #<IF, "if">
+            cadena = ""
+            fila = 0
+            columnainicial = 0
