@@ -1,5 +1,5 @@
 gym day {%inicio%
-    num PERFORMANCE = 480% dededededede %
+    num PERFORMANCE = 480% dededededede% 
     chest PRESS = ex(sets=4, reps=10, weight=45)% ghdedjejdede %
     chest INCLINEPRESS = ex(sets=4, reps=10, weight=55)% dedeedede%
     leg CARDIO = ex(sets=8,reps=20, weight=1)
