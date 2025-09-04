@@ -86,7 +86,7 @@ def openjax() :
 def analizador(contents):
     Await_type = " "
     ignorer_mode = False
-    linea_codigo = 2
+    linea_codigo = 1
     parentesisabiertos = 0
     llavesabiertos = 0
     cadena = ""
@@ -100,6 +100,7 @@ def analizador(contents):
         #difference = codigo - contador
         #for caracter in contents: 
         caracter = contents[contador]
+        print(linea_codigo)
        # print(caracter)
        # if caracter in [' ', '\n', '\t']:
         if caracter in [ '\n', '\t']:
@@ -110,6 +111,8 @@ def analizador(contents):
             contador = contador + 1
             continue
         if ignorer_mode:
+            if caracter == '\n':
+                linea_codigo = linea_codigo + 1
             if caracter == '%':
                 ignorer_mode = False
                 contador = contador + 1
