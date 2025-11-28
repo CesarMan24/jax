@@ -10,6 +10,7 @@ gym day {%inicio%
     PRESS = PRESSTEMP
     prn(PERFORMANCE)
     CARDIO =  PERFORMANCE - TRESEJERCICIOS 
+    prn("Entrando a la condicional")
     si TRESEJERCICIOS < PERFORMANCE
      {
       repeat remaining{
