@@ -10,6 +10,9 @@ tokens = []            # lista de tokens producidos por el léxico
 current_index = 0      # índice del token actual para el parser
 current_token = None   # token actual
 word = None  
+# Contadores / almacenamiento de errores semánticos
+semantic_errors = 0
+semantic_messages = []
 
 palabra_reservada = [
   #  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63  64 65
@@ -202,11 +205,22 @@ def openjax():
             print('sintaxis correcta')
         else:
             print('sintaxis incorrecta')
+       # ---------------- ANALISIS SEMANTICO ----------------
+    print("\n-----------------------------")
+    print(" ANALISIS SEMANTICO")
 
-        print("\n")
-        print("TABLA DE SÍMBOLOS:")
-        print(" NOMBRE   TIPO   TAMANO   DIMENSION   DECLARATIONLINE   USAGELINE")
-        for variable in range(len(Nombres)):
+    if semantic_messages:
+        for msg in semantic_messages:
+            print(msg)
+    else:
+        print("No se encontraron errores semánticos.")
+    
+    print(f"\nErrores semánticos: {semantic_errors}")
+
+    print("\n")
+    print("TABLA DE SÍMBOLOS:")
+    print(" NOMBRE   TIPO   TAMANO   DIMENSION   DECLARATIONLINE   USAGELINE")
+    for variable in range(len(Nombres)):
             usage_str = str(UsageLine[variable]) if isinstance(UsageLine[variable], list) else str(UsageLine[variable])
             print(f"{Nombres[variable]:<8} {Tipo[variable]:<6} {Tamano[variable]:<7} {Dimension[variable]:<10} {DeclarationLine[variable]:<16} {usage_str}")
 
@@ -497,6 +511,44 @@ def syntax_error(msg):
     print(f"Error sintáctico en línea {current_token.linea}: {msg}. "
           f"Token encontrado siguiente: '{current_token.valor}' ") #(clase: {word})
     return False
+
+# -------------------------
+#   ANALISIS SEMÁNTICO
+# -------------------------
+
+tabla_variables = {}      # nombre -> tipo ('num', 'ex', etc.)
+errores_semanticos = 0
+
+def semantic_error(msg):
+    """
+    Registra un error semántico pero NO lo imprime de inmediato.
+    """
+    global semantic_errors, semantic_messages, current_token
+    semantic_errors += 1
+    linea = current_token.linea if current_token else "?"
+    semantic_messages.append(
+        f"Error semántico en línea {linea}: {msg}"
+    )
+
+
+def declara_variable(nombre, tipo):
+    """
+    Registra una variable nueva en la tabla de símbolos.
+    Marca error si ya estaba declarada.
+    """
+    if nombre in tabla_variables:
+        semantic_error(f"la variable '{nombre}' ya fue declarada anteriormente")
+    else:
+        tabla_variables[nombre] = tipo
+
+def usa_variable(nombre):
+    """
+    Verifica que una variable exista antes de usarla.
+    """
+    if nombre not in tabla_variables:
+        semantic_error(f"la variable '{nombre}' no ha sido declarada")
+
+
 def PROGRAMA() :
     #print("PROGRAMA -> gym day { ... } gym end FUNCLIST")
     if word != 'gym':
@@ -673,13 +725,17 @@ def ASSIGNPERFORMANCE(): # num performance = numero
         syntax_error("se esperaba 'num' ")
         return False
     GetNextWorld()
-    # if word != 'identificador': #performance PERFORMANCE
-    #     print('Fallo en identificador ASSIGNPERFORMANCE()')
-    #     return False
+
+    # Aquí esperamos el identificador 'performance'
     if word != 'performance':
         print('Fallo en performance ASSIGNPERFORMANCE()')
         syntax_error("se esperaba 'performance' ")
         return False
+
+    # Declaración semántica de la variable 'performance' de tipo num
+    nombre_perf = current_token.valor
+    declara_variable(nombre_perf, 'num')
+
     GetNextWorld()
     if word != '=':
          print('Fallo en PERFORMANCE')
@@ -693,6 +749,7 @@ def ASSIGNPERFORMANCE(): # num performance = numero
     GetNextWorld()
     print("ASSIGNPERFORMANCE ->  num PERFORMANCE = numero")
     return True
+
 def STMTLIST(): #  E |STMT STMTLIST
     if word in ('}', 'end', 'eof'): # E
         print("STMTLIST -> E")
@@ -756,12 +813,18 @@ def IDLEAD(): # identificador IDTAIL
     if word != 'identificador':
         print('Fallo en  identificador IDLEAD()')
         return False
+
+    # Uso semántico del identificador (lado izquierdo de asignación o llamada)
+    nombre_id = current_token.valor
+    usa_variable(nombre_id)
+
     GetNextWorld()
     res = IDTAIL()
     if res == False:
         print('Fallo en  IDTAIL IDLEAD()')
         return False
     return True
+
 def IDTAIL(): # =ASSIGNRHS | ( ARGS )
     if word =='=': #word in ('sho', 'bic', 'leg', 'chest', 'back', 'tric'):
         GetNextWorld()
@@ -902,6 +965,11 @@ def EXDCL(): # MUSCLEKW identificador = EXRHS
         print('Fallo en identificador EXDCL')
         syntax_error("se esperaba identificador ")
         return False
+
+    # Declaración semántica: variable de tipo 'ex' (ejercicio)
+    nombre_ex = current_token.valor
+    declara_variable(nombre_ex, 'ex')
+
     GetNextWorld()
     if word != '=':
         print('Fallo en  = EXDCL')
@@ -913,6 +981,7 @@ def EXDCL(): # MUSCLEKW identificador = EXRHS
         print('Fallo en EXRHS() en EXDCL')
         return False
     return True
+
 def VARDECL(): #num identificador = EXPR
     if word != 'num':
         print('Fallo en num en VARDECL()')
@@ -923,6 +992,11 @@ def VARDECL(): #num identificador = EXPR
         print('Fallo en identificador en VARDECL()')
         syntax_error("se esperaba identificador ")
         return False
+
+    # Declaración semántica de variable numérica
+    nombre_var = current_token.valor
+    declara_variable(nombre_var, 'num')
+
     GetNextWorld()
     if word != '=':
         print('Fallo en = en VARDECL()')
@@ -934,6 +1008,7 @@ def VARDECL(): #num identificador = EXPR
         print('Fallo en EXPR en VARDECL()')
         return False
     return True
+
 def REPEAT(): #repeat REPEATOP { STMTLIST }
     if word != 'repeat':
         print('Fallo en EXPR en REPEAT()')
@@ -1145,6 +1220,10 @@ def TERM(): # FACTOR TERMTAIL  FACTOR TERMTAIL
     return True
 def FACTOR(): # identificador | numero | (EXPR)  
     if word =='identificador':
+        # Uso semántico: variable en una expresión
+        nombre_id = current_token.valor
+        usa_variable(nombre_id)
+
         print("FACTOR -> identificador")
         GetNextWorld()
         return True
@@ -1168,6 +1247,7 @@ def FACTOR(): # identificador | numero | (EXPR)
         return True
     syntax_error("se esperaba identificador, numero o (")
     return False
+
 def TERMTAIL(): # E |*FACTOR TERMTAIL
     if word in ('+','-','<','>', '=',',',')', '{', '}', 'sho', 'bic', 'leg', 'chest','back', 'tric', 'num', 'identificador', 'si', 'repeat', 'prn'): # E
         print("TERMTAIL -> E")
